@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="blue_primary">#003366</color>       <!-- Azul Oscuro -->
+    <color name="blue_variant">#001F3F</color>       <!-- Azul Intenso -->
+    <color name="cyan_accent">#3399FF</color>        <!-- Celeste -->
+    <color name="cyan_light">#E6F2FF</color>         <!-- Celeste Claro para el fondo -->
+    <color name="white">#FFFFFF</color>              <!-- Blanco -->
+    <color name="gray_text">#666666</color>          <!-- Gris para lso texto  -->
+</resources>
