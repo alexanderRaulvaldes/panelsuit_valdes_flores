@@ -3,7 +3,7 @@ package com.panalbit.panalsuite.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.panalbit.panalsuite.model.Usuario
-import com.panalbit.panalsuite.repository.AuthRepository
+import com.panalbit.panalsuite.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

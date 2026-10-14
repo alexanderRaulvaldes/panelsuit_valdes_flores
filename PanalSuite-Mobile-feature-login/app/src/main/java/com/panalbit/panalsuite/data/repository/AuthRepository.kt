@@ -1,4 +1,4 @@
-package com.panalbit.panalsuite.repository
+package com.panalbit.panalsuite.data.repository
 
 import com.panalbit.panalsuite.model.Rol
 import com.panalbit.panalsuite.model.Usuario

@@ -7,7 +7,7 @@ Desarrollado en Kotlin con Jetpack Compose y arquitectura MVVM.
 
 ### Qué se hizo hoy
 - **Modelo** (`model/Usuario.kt`): clase `Usuario` y enum `Rol` (Solicitante, Resolutor, Supervisor, Gerencia, Administrador).
-- **Repositorio** (`repository/AuthRepository.kt`): validación de credenciales con usuarios ficticios. Está pensado para reemplazarlo por la API REST cuando exista.
+- **Repositorio** (`data/repository/AuthRepository.kt`): validación de credenciales con usuarios ficticios. Está pensado para reemplazarlo por la API REST cuando exista.
 - **ViewModel** (`viewmodel/LoginViewModel.kt`): estado de la pantalla (correo, contraseña, carga, error) y lógica del login.
 - **Pantalla** (`ui/LoginScreen.kt`): formulario de login con Jetpack Compose.
 - **MainActivity**: muestra el login y, si es exitoso, un mensaje con el nombre y el rol del usuario.
