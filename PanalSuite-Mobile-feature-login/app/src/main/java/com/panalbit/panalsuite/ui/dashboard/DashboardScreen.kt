@@ -14,26 +14,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.panalbit.panalsuite.model.Ticket
-import com.panalbit.panalsuite.model.Usuario
+import com.panalbit.panalsuite.model.User
 import com.panalbit.panalsuite.ui.theme.SemanticInfo
 import com.panalbit.panalsuite.ui.theme.SemanticSuccess
 import com.panalbit.panalsuite.ui.theme.SemanticWarning
 
 @Composable
 fun DashboardScreen(
-    usuario: Usuario,
-    onCerrarSesion: () -> Unit,
+    user: User,
+    onLogout: () -> Unit,
+    onTicketClick: (String) -> Unit,
     vm: DashboardViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
 
-    LaunchedEffect(usuario.rol) {
-        vm.loadTickets(usuario.rol)
+    LaunchedEffect(user.role) {
+        vm.loadTickets(user.role)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // Encabezado con botón de salir
+        // Header with logout button
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -51,24 +52,24 @@ fun DashboardScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Hola, ${usuario.nombre}",
+                        "Hola, ${user.name}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Text(
-                        "Rol: ${usuario.rol}",
+                        "Rol: ${user.role}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                     )
                 }
-                TextButton(onClick = onCerrarSesion) {
+                TextButton(onClick = onLogout) {
                     Text("Salir", color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
 
-        // Contenido
+        // Content
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Text(
                 "Mi bandeja",
@@ -78,14 +79,16 @@ fun DashboardScreen(
             Spacer(Modifier.height(12.dp))
 
             when {
-                state.cargando -> CircularProgressIndicator()
+                state.loading -> CircularProgressIndicator()
                 state.error != null -> Text(
                     state.error!!,
                     color = MaterialTheme.colorScheme.error
                 )
                 state.tickets.isEmpty() -> Text("No hay tickets para mostrar")
                 else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(state.tickets) { ticket -> TicketItem(ticket) }
+                    items(state.tickets) { ticket ->
+                        TicketItem(ticket, onClick = { onTicketClick(ticket.idRequest) })
+                    }
                 }
             }
         }
@@ -93,8 +96,9 @@ fun DashboardScreen(
 }
 
 @Composable
-fun TicketItem(ticket: Ticket) {
+fun TicketItem(ticket: Ticket, onClick: () -> Unit = {}) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -111,13 +115,13 @@ fun TicketItem(ticket: Ticket) {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                EstadoChip(ticket.state)
+                StateChip(ticket.state)
             }
             Spacer(Modifier.height(4.dp))
             Text(ticket.flowType, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Responsable: ${ticket.responsable ?: "Sin asignar"}",
+                "Responsable: ${ticket.assignee ?: "Sin asignar"}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -131,10 +135,10 @@ fun TicketItem(ticket: Ticket) {
 }
 
 @Composable
-fun EstadoChip(estado: String) {
-    val color: Color = when (estado) {
+fun StateChip(ticketState: String) {
+    val color: Color = when (ticketState) {
         "Abierto" -> SemanticInfo
-        "En proceso" -> SemanticWarning
+        "En proceso", "Pendiente" -> SemanticWarning
         "Cerrado" -> SemanticSuccess
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -143,7 +147,7 @@ fun EstadoChip(estado: String) {
         shape = RoundedCornerShape(50)
     ) {
         Text(
-            estado,
+            ticketState,
             color = color,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,

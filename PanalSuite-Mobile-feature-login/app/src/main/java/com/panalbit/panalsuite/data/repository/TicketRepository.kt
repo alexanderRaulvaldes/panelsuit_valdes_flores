@@ -1,5 +1,6 @@
 package com.panalbit.panalsuite.data.repository
-import com.panalbit.panalsuite.model.Rol
+
+import com.panalbit.panalsuite.model.Role
 import com.panalbit.panalsuite.model.Ticket
 import kotlinx.coroutines.delay
 
@@ -13,12 +14,12 @@ class TicketRepository {
         Ticket("TCK-005", "Cobranzas", "En proceso", "Otro Resolutor", "Proveedor Norte")
     )
 
-    // Simula la API. Después se reemplaza por la llamada a Retrofit.
-    suspend fun getInbox(rol: Rol): List<Ticket> {
+    // Simulates the API. Later it will be replaced by a Retrofit call.
+    suspend fun getInbox(role: Role): List<Ticket> {
         delay(600)
-        return when (rol) {
-            Rol.SOLICITANTE -> tickets.take(3)
-            Rol.RESOLUTOR -> tickets.filter { it.responsable == "Raúl Resolutor" }
+        return when (role) {
+            Role.REQUESTER -> tickets.take(3)
+            Role.RESOLVER -> tickets.filter { it.assignee == "Raúl Resolutor" }
             else -> tickets
         }
     }

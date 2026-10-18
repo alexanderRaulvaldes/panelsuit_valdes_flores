@@ -12,9 +12,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.panalbit.panalsuite.model.Usuario
+import com.panalbit.panalsuite.model.User
 import com.panalbit.panalsuite.ui.LoginScreen
 import com.panalbit.panalsuite.ui.dashboard.DashboardScreen
+import com.panalbit.panalsuite.ui.dashboard.TicketDetailScreen
 import com.panalbit.panalsuite.ui.theme.PanalsuiteTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,15 +28,24 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var usuario by remember { mutableStateOf<Usuario?>(null) }
-                    val u = usuario
+                    var user by remember { mutableStateOf<User?>(null) }
+                    var ticketId by remember { mutableStateOf<String?>(null) }
+                    val currentUser = user
+                    val currentTicketId = ticketId
 
-                    if (u == null) {
-                        LoginScreen(onLoginExitoso = { usuario = it })
-                    } else {
+                    if (currentUser == null) {
+                        LoginScreen(onLoginSuccess = { user = it })
+                    } else if (currentTicketId == null) {
                         DashboardScreen(
-                            usuario = u,
-                            onCerrarSesion = { usuario = null }
+                            user = currentUser,
+                            onLogout = { user = null },
+                            onTicketClick = { ticketId = it }
+                        )
+                    } else {
+                        TicketDetailScreen(
+                            ticketId = currentTicketId,
+                            user = currentUser,
+                            onBack = { ticketId = null }
                         )
                     }
                 }

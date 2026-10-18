@@ -1,10 +1,10 @@
 package com.panalbit.panalsuite.model
 
-enum class Rol { SOLICITANTE, RESOLUTOR, SUPERVISOR, GERENCIA, ADMINISTRADOR }
+enum class Role { REQUESTER, RESOLVER, SUPERVISOR, MANAGER, ADMIN }
 
-data class Usuario(
+data class User(
     val id: Int,
-    val nombre: String,
+    val name: String,
     val email: String,
-    val rol: Rol
+    val role: Role
 )

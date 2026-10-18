@@ -7,9 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +20,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.panalbit.panalsuite.model.Usuario
+import com.panalbit.panalsuite.model.User
 import com.panalbit.panalsuite.ui.theme.AccentAction
 import com.panalbit.panalsuite.ui.theme.CorporatePrimary
 import com.panalbit.panalsuite.ui.theme.CorporatePrimaryVariant
@@ -31,25 +28,23 @@ import com.panalbit.panalsuite.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginExitoso: (Usuario) -> Unit,
+    onLoginSuccess: (User) -> Unit,
     vm: LoginViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
-    var verPassword by remember { mutableStateOf(false) }
+    var showPassword by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.usuario) {
-        state.usuario?.let {
-            onLoginExitoso(it)
-            vm.limpiarUsuario()
+    LaunchedEffect(state.user) {
+        state.user?.let {
+            onLoginSuccess(it)
+            vm.clearUser()
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(CorporatePrimary, CorporatePrimaryVariant))
-            )
+            .background(Brush.verticalGradient(listOf(CorporatePrimary, CorporatePrimaryVariant)))
     ) {
         Column(
             modifier = Modifier
@@ -69,12 +64,7 @@ fun LoginScreen(
                 Text("P", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(16.dp))
-            Text(
-                "PanalSuite",
-                color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text("PanalSuite", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Text(
                 "Gestión móvil de flujos de trabajo",
                 color = Color.White.copy(alpha = 0.75f),
@@ -83,7 +73,7 @@ fun LoginScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Tarjeta del formulario
+            // Form card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -102,7 +92,6 @@ fun LoginScreen(
                         value = state.email,
                         onValueChange = { vm.onEmailChange(it) },
                         label = { Text("Correo") },
-                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         shape = RoundedCornerShape(12.dp),
@@ -114,14 +103,13 @@ fun LoginScreen(
                         value = state.password,
                         onValueChange = { vm.onPasswordChange(it) },
                         label = { Text("Contraseña") },
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
-                            TextButton(onClick = { verPassword = !verPassword }) {
-                                Text(if (verPassword) "Ocultar" else "Mostrar")
+                            TextButton(onClick = { showPassword = !showPassword }) {
+                                Text(if (showPassword) "Ocultar" else "Mostrar")
                             }
                         },
                         singleLine = true,
-                        visualTransformation = if (verPassword) VisualTransformation.None
+                        visualTransformation = if (showPassword) VisualTransformation.None
                         else PasswordVisualTransformation(),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -139,11 +127,11 @@ fun LoginScreen(
                     Spacer(Modifier.height(20.dp))
                     Button(
                         onClick = { vm.login() },
-                        enabled = !state.cargando,
+                        enabled = !state.loading,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth().height(52.dp)
                     ) {
-                        if (state.cargando) {
+                        if (state.loading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(22.dp),
                                 strokeWidth = 2.dp,
@@ -158,7 +146,7 @@ fun LoginScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Accesos rápidos de prueba
+            // Quick test access
             Text(
                 "Acceso rápido (datos de prueba)",
                 color = Color.White.copy(alpha = 0.75f),
@@ -166,22 +154,22 @@ fun LoginScreen(
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AccesoRapido("Solicitante", "solicitante@panalbit.cl", vm)
-                AccesoRapido("Resolutor", "resolutor@panalbit.cl", vm)
-                AccesoRapido("Admin", "admin@panalbit.cl", vm)
+                QuickAccessChip("Solicitante", "solicitante@panalbit.cl", vm)
+                QuickAccessChip("Resolutor", "resolutor@panalbit.cl", vm)
+                QuickAccessChip("Admin", "admin@panalbit.cl", vm)
             }
         }
     }
 }
 
 @Composable
-private fun AccesoRapido(nombre: String, correo: String, vm: LoginViewModel) {
+private fun QuickAccessChip(label: String, email: String, vm: LoginViewModel) {
     AssistChip(
         onClick = {
-            vm.onEmailChange(correo)
+            vm.onEmailChange(email)
             vm.onPasswordChange("1234")
         },
-        label = { Text(nombre, color = Color.White) },
+        label = { Text(label, color = Color.White) },
         colors = AssistChipDefaults.assistChipColors(
             containerColor = Color.White.copy(alpha = 0.12f)
         ),
