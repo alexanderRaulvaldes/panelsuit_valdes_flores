@@ -1,7 +1,6 @@
 package com.panalbit.panalsuite.ui.dashboard
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,10 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.panalbit.panalsuite.model.Role
-import com.panalbit.panalsuite.model.User
-
-private val STATES = listOf("Abierto", "En proceso", "Pendiente", "Cerrado")
+import com.panalbit.panalsuite.model.*
+import com.panalbit.panalsuite.ui.components.AppHeader
+import com.panalbit.panalsuite.ui.components.PriorityChip
+import com.panalbit.panalsuite.ui.components.StateChip
 
 @Composable
 fun TicketDetailScreen(
@@ -31,144 +30,201 @@ fun TicketDetailScreen(
     val ticket = state.tickets.find { it.idRequest == ticketId }
     var comment by remember { mutableStateOf("") }
 
-    // Permissions by role
-    val canChangeState = user.role == Role.RESOLVER || user.role == Role.ADMIN
-    val canComment = user.role != Role.MANAGER
-
     // The phone's back button also returns to the inbox
     BackHandler { onBack() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-
-        // Header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-                )
-                .statusBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onBack) {
-                    Text("← Volver", color = MaterialTheme.colorScheme.onPrimary)
-                }
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    ticket?.idRequest ?: "Ticket",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
+        AppHeader(title = ticket?.idRequest ?: "Ticket", onBack = onBack)
 
         if (ticket == null) {
             Text("Ticket no encontrado", modifier = Modifier.padding(16.dp))
             return@Column
         }
 
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(16.dp)
+        // Permissions for this user on this ticket
+        val isAssignee = ticket.assignee == user.name
+        val canChangeState = user.role.canChangeState() && (user.role == Role.ADMIN || isAssignee)
+        val canTake = user.role.canTakeTicket() && ticket.assignee == null
+
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Ticket information
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(ticket.flowType, style = MaterialTheme.typography.titleMedium)
-                        StateChip(ticket.state)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                ticket.flowType,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            StateChip(ticket.state)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        PriorityChip(ticket.priority)
+                        Spacer(Modifier.height(8.dp))
+                        Text(ticket.description, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(8.dp))
+                        DetailLine("Solicitante", ticket.requester)
+                        DetailLine("Responsable", ticket.assignee ?: "Sin asignar")
+                        DetailLine("Ubicación", ticket.referenceLocation)
+                        DetailLine("Creado", ticket.createdAt)
+                        DetailLine("Actualizado", ticket.updatedAt)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Responsable: ${ticket.assignee ?: "Sin asignar"}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        "Ubicación: ${ticket.referenceLocation}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
                 }
             }
 
-            // Change state (only Resolver and Admin)
-            Spacer(Modifier.height(16.dp))
-            if (canChangeState) {
-                Text(
-                    "Cambiar estado",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    STATES.forEach { option ->
-                        FilterChip(
-                            selected = ticket.state == option,
-                            onClick = { vm.changeState(ticket.idRequest, option) },
-                            label = { Text(option) }
+            // Assignment
+            if (canTake || user.role.canAssign()) {
+                item {
+                    Column {
+                        Text(
+                            "Asignación",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        if (canTake) {
+                            Button(
+                                onClick = { vm.assign(ticket.idRequest, user.name, user.name) },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Tomar ticket")
+                            }
+                        }
+                        if (user.role.canAssign()) {
+                            Text("Asignar a:", style = MaterialTheme.typography.bodySmall)
+                            Spacer(Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                vm.resolvers.forEach { name ->
+                                    FilterChip(
+                                        selected = ticket.assignee == name,
+                                        onClick = { vm.assign(ticket.idRequest, name, user.name) },
+                                        label = { Text(name) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Change state
+            item {
+                Column {
+                    Text(
+                        "Cambiar estado",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    if (canChangeState) {
+                        Row(
+                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            TicketState.all.forEach { option ->
+                                FilterChip(
+                                    selected = ticket.state == option,
+                                    onClick = { vm.changeState(ticket.idRequest, option, user.name) },
+                                    label = { Text(option) }
+                                )
+                            }
+                        }
+                    } else {
+                        val message = if (user.role.canChangeState()) {
+                            "Toma el ticket para poder cambiar su estado."
+                        } else {
+                            "Tu rol solo puede consultar el estado."
+                        }
+                        Text(
+                            message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-            } else {
-                Text(
-                    "Tu rol solo puede consultar el estado.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             // Comments
-            Spacer(Modifier.height(16.dp))
-            Text(
-                "Comentarios (${ticket.comments.size})",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(8.dp))
-
-            if (ticket.comments.isEmpty()) {
+            item {
                 Text(
-                    "Aún no hay comentarios.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    "Comentarios (${ticket.comments.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
                 )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            }
+            if (ticket.comments.isEmpty()) {
+                item {
+                    Text(
+                        "Aún no hay comentarios.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            items(ticket.comments) { c ->
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(12.dp),
+                    tonalElevation = 2.dp,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(ticket.comments) { text ->
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(12.dp),
-                            tonalElevation = 2.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text, modifier = Modifier.padding(12.dp))
-                        }
+                    Column(Modifier.padding(12.dp)) {
+                        Text(
+                            c.author,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(c.text, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            c.date,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // History (traceability)
+            item {
+                Column {
+                    Text(
+                        "Historial de cambios",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    ticket.history.reversed().forEach { event ->
+                        Text(
+                            "${event.date} · ${event.author}: ${event.description}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
                     }
                 }
             }
         }
 
         // Input box (only if the role can comment)
-        if (canComment) {
+        if (user.role.canComment()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -188,7 +244,7 @@ fun TicketDetailScreen(
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
-                        vm.addComment(ticket.idRequest, "${user.name}: $comment")
+                        vm.addComment(ticket.idRequest, comment, user.name)
                         comment = ""
                     },
                     enabled = comment.isNotBlank(),
@@ -199,4 +255,13 @@ fun TicketDetailScreen(
             }
         }
     }
+}
+
+@Composable
+private fun DetailLine(label: String, value: String) {
+    Text(
+        "$label: $value",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
