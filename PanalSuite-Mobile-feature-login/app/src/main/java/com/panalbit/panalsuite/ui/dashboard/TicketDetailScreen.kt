@@ -125,7 +125,7 @@ fun TicketDetailScreen(
                 }
             }
 
-            // Change state
+            // Change state osea cambaistmos el estado
             item {
                 Column {
                     Text(
@@ -202,7 +202,7 @@ fun TicketDetailScreen(
                 }
             }
 
-            // History (traceability)
+            // History solo para admin)
             item {
                 Column {
                     Text(
@@ -223,7 +223,7 @@ fun TicketDetailScreen(
             }
         }
 
-        // Input box (only if the role can comment)
+        // aca solo se muestra el comentario y lo puede cambiar el usuario
         if (user.role.canComment()) {
             Row(
                 modifier = Modifier

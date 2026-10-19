@@ -49,7 +49,6 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    // Clears the saved user so the login is not skipped next time
     fun clearUser() {
         _state.update { it.copy(user = null, password = "") }
     }

@@ -73,7 +73,7 @@ fun LoginScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Form card
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),

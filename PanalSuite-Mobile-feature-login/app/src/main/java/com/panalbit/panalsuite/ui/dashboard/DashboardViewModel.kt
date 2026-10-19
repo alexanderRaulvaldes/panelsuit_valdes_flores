@@ -106,7 +106,7 @@ class DashboardViewModel : ViewModel() {
         }
     }
 
-    // Applies a change to one ticket, saves it in the repository and updates the screen state
+    // estamos generando cambios en el estado de la app y depues se agrega a la lista de tickets
     private fun modify(id: String, transform: (Ticket) -> Ticket) {
         val updatedList = _state.value.tickets.map { if (it.idRequest == id) transform(it) else it }
         updatedList.firstOrNull { it.idRequest == id }?.let { repository.update(it) }
