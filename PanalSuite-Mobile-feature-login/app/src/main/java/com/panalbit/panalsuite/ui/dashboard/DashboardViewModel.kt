@@ -65,8 +65,10 @@ class DashboardViewModel : ViewModel() {
     }
 
     fun createTicket(user: User, flowType: String, priority: String, location: String, description: String) {
-        val ticket = repository.create(user, flowType, priority, location, description)
-        _state.update { it.copy(tickets = listOf(ticket) + it.tickets) }
+        viewModelScope.launch {
+            val ticket = repository.create(user, flowType, priority, location, description)
+            _state.update { it.copy(tickets = listOf(ticket) + it.tickets) }
+        }
     }
 
     fun changeState(id: String, newState: String, author: String) = modify(id) { t ->
@@ -106,10 +108,11 @@ class DashboardViewModel : ViewModel() {
         }
     }
 
-    // Applies a change to one ticket, saves it in the repository and updates the screen state
     private fun modify(id: String, transform: (Ticket) -> Ticket) {
-        val updatedList = _state.value.tickets.map { if (it.idRequest == id) transform(it) else it }
-        updatedList.firstOrNull { it.idRequest == id }?.let { repository.update(it) }
-        _state.update { it.copy(tickets = updatedList) }
+        viewModelScope.launch {
+            val updatedList = _state.value.tickets.map { if (it.idRequest == id) transform(it) else it }
+            updatedList.firstOrNull { it.idRequest == id }?.let { repository.update(it) }
+            _state.update { it.copy(tickets = updatedList) }
+        }
     }
 }

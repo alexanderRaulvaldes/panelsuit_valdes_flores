@@ -1,14 +1,17 @@
 package com.panalbit.panalsuite.data.repository
 
+import com.panalbit.panalsuite.data.api.RetrofitClient
 import com.panalbit.panalsuite.model.*
 import com.panalbit.panalsuite.util.DateUtils
 import kotlinx.coroutines.delay
 
 class TicketRepository {
 
+    private val api = RetrofitClient.api
     val resolvers = listOf("Raúl Resolutor", "Otro Resolutor")
 
-    private val tickets = mutableListOf(
+    //respaldo en memoria
+    private val mockTickets = mutableListOf(
         seed("TCK-001", "Mesa de ayuda", TicketPriority.MEDIUM, TicketState.OPEN,
             "Ana Solicitante", "Raúl Resolutor", "Sucursal Alameda",
             "La caja no enciende al iniciar el turno."),
@@ -26,17 +29,20 @@ class TicketRepository {
             "Factura vencida sin registrar.")
     )
 
-    // Esto esta simulando la appi asi depues lo cambias por el retrofill nomas
     suspend fun getInbox(user: User): List<Ticket> {
-        delay(600)
-        return when (user.role) {
-            Role.REQUESTER -> tickets.filter { it.requester == user.name }
-            Role.RESOLVER -> tickets.filter { it.assignee == user.name || it.assignee == null }
-            else -> tickets.toList()
+        return try {
+            val response = api.getTickets()
+            if (response.isSuccessful && response.body() != null) {
+                filterForUser(response.body()!!, user)
+            } else {
+                getFallbackInbox(user)
+            }
+        } catch (e: Exception) {
+            getFallbackInbox(user)
         }
     }
 
-    fun create(
+    suspend fun create(
         user: User,
         flowType: String,
         priority: String,
@@ -44,7 +50,7 @@ class TicketRepository {
         description: String
     ): Ticket {
         val now = DateUtils.now()
-        val ticket = Ticket(
+        val newTicket = Ticket(
             idRequest = nextId(),
             flowType = flowType,
             priority = priority,
@@ -57,17 +63,51 @@ class TicketRepository {
             updatedAt = now,
             history = listOf(TicketEvent(user.name, "Ticket creado", now))
         )
-        tickets.add(0, ticket)
+
+        return try {
+            val response = api.createTicket(newTicket)
+            if (response.isSuccessful && response.body() != null) {
+                val created = response.body()!!
+                mockTickets.add(0, created)
+                created
+            } else {
+                fallbackCreate(newTicket)
+            }
+        } catch (e: Exception) {
+            fallbackCreate(newTicket)
+        }
+    }
+
+    suspend fun update(ticket: Ticket) {
+        try {
+            api.updateTicket(ticket.idRequest, ticket)
+        } catch (_: Exception) {
+        } finally {
+            val index = mockTickets.indexOfFirst { it.idRequest == ticket.idRequest }
+            if (index >= 0) mockTickets[index] = ticket
+        }
+    }
+
+    private suspend fun getFallbackInbox(user: User): List<Ticket> {
+        delay(400)
+        return filterForUser(mockTickets, user)
+    }
+
+    private fun filterForUser(list: List<Ticket>, user: User): List<Ticket> {
+        return when (user.role) {
+            Role.REQUESTER -> list.filter { it.requester == user.name }
+            Role.RESOLVER -> list.filter { it.assignee == user.name || it.assignee == null }
+            else -> list.toList()
+        }
+    }
+
+    private fun fallbackCreate(ticket: Ticket): Ticket {
+        mockTickets.add(0, ticket)
         return ticket
     }
 
-    fun update(ticket: Ticket) {
-        val index = tickets.indexOfFirst { it.idRequest == ticket.idRequest }
-        if (index >= 0) tickets[index] = ticket
-    }
-
     private fun nextId(): String {
-        val max = tickets.maxOfOrNull { it.idRequest.removePrefix("TCK-").toIntOrNull() ?: 0 } ?: 0
+        val max = mockTickets.maxOfOrNull { it.idRequest.removePrefix("TCK-").toIntOrNull() ?: 0 } ?: 0
         return "TCK-%03d".format(max + 1)
     }
 
