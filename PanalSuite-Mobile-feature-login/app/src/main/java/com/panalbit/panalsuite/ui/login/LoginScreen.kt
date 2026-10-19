@@ -1,4 +1,4 @@
-package com.panalbit.panalsuite.ui
+package com.panalbit.panalsuite.ui.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -24,7 +24,6 @@ import com.panalbit.panalsuite.model.User
 import com.panalbit.panalsuite.ui.theme.AccentAction
 import com.panalbit.panalsuite.ui.theme.CorporatePrimary
 import com.panalbit.panalsuite.ui.theme.CorporatePrimaryVariant
-import com.panalbit.panalsuite.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(

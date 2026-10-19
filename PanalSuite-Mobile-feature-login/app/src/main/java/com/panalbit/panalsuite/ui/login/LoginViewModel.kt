@@ -1,4 +1,4 @@
-package com.panalbit.panalsuite.viewmodel
+package com.panalbit.panalsuite.ui.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

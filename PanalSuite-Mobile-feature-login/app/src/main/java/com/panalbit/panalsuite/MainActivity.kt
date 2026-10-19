@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.panalbit.panalsuite.navigation.Screen
-import com.panalbit.panalsuite.ui.LoginScreen
+import com.panalbit.panalsuite.ui.login.LoginScreen
 import com.panalbit.panalsuite.ui.dashboard.CreateTicketScreen
 import com.panalbit.panalsuite.ui.dashboard.DashboardScreen
 import com.panalbit.panalsuite.ui.dashboard.TicketDetailScreen
